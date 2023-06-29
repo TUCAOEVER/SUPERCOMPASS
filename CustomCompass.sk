@@ -1,0 +1,65 @@
+# /supercompass create|remove|list compassID
+# /supercompass set|unset player compassID
+command /supercompass [<text>] [<text>]:
+    trigger:
+        command sender is console:
+            
+            if arg-1 is "set":
+                if arg-2 is not set:
+                    send "Please specific Player Name"
+                    stop
+                set {_player} to arg-2 parsed as player
+                if {_player} is set:
+                    if arg-3 is not set:
+                        send "Please specific Comapss ID"
+                        stop
+                    set {_location} to SC_getLocation(arg-3)
+                    if {_location} is not set:
+                        send "Invalid compass location"
+                    else:
+                        set {_player}'s compass target to {_location}
+                        send "Successfully set %{_player}%'s compass location to %{_location}%"
+                else:
+                    send "Unknown Player" to console
+            else if arg-1 is "unset":
+                if arg-2 is not set:
+                    send "Please specific Player Name"
+                    stop
+            else:
+                send "Please specific operation type. [Set|Unset]"
+
+function SC_getLocation(id: text) :: location:
+    {-SC::Compass::%{_id}%} is set
+    set {_values::*} to {-SC::Compass::%{_id}%} split at ";"
+    set {_output} to location({_values::1} parsed as number, {_values::2} parsed as number, {_values::3} parsed as number, {_values::4} parsed as world)
+    {_output} is set
+    return {_output}
+
+function SC_hasCompass() :: boolean:
+    yaml ""
+
+
+on load:
+
+    set {_keys::*} to yaml node keys "" from "plugins/SUPERCOMPASS/config.yml"
+    loop {_keys::*}
+        set {-SC::Compass::%loop-value%} to yaml value "%loop-value%" from "plugins/SUPERCOMPASS/config.yml"
+
+on load:
+
+    add "Messages.\" to {_list::*}
+
+    #add "Compass.Test\0;0;0;SKYBLOCK" to {_list::*}
+
+    loop {_list::*}:
+        set {_values::*} to loop-value split at "\"
+        yaml value {_list::1} is not set
+        set yaml value {_list::1} from "plugins/SUPERCOMPASS/messages.yml" to {_list::2}
+        
+    set {_keys::*} to yaml node keys "Messages" from "plugins/SUPERCOMPASS/messages.yml"
+    loop {_keys::*}
+        set {-SC::Messages::%loop-value%} to yaml value "Messages.%loop-value%" from "plugins/SUPERCOMPASS/messages.yml"
+
+
+
+        
