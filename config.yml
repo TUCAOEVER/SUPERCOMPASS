@@ -1,0 +1,9 @@
+compass:
+  '1':
+    location: '0;0;0;SKYBLOCK'
+    name: 'Spawn Point'
+    type: area
+  '2':
+    location: '0;128;0;SKYBLOCK'
+    name: 'Spawn Point Sky'
+    type: npc

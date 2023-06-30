@@ -1,16 +1,14 @@
-# /supercompass create|remove|list compassID
 # /supercompass set|unset player compassID
 command /supercompass [<text>] [<text>]:
     trigger:
         command sender is console:
-            
             if arg-1 is "set":
                 if arg-2 is not set:
                     send "Please specific Player Name"
                     stop
                 set {_player} to arg-2 parsed as player
                 if {_player} is set:
-                    if arg-3 is not set:
+                    if SC_hasCompass(arg-3) is false:
                         send "Please specific Comapss ID"
                         stop
                     set {_location} to SC_getLocation(arg-3)
@@ -18,6 +16,10 @@ command /supercompass [<text>] [<text>]:
                         send "Invalid compass location"
                     else:
                         set {_player}'s compass target to {_location}
+                        set {_msg} to {-SC::Messages::Successfully_Set_Compass}
+                        replace all "{VALUE1}" with SC_getComapssName(arg-3) in {_msg}
+                        replace all "{VALUE2}" with SC_getRawLocation(arg-3) is {_msg}
+                        send {_msg} to {_player}
                         send "Successfully set %{_player}%'s compass location to %{_location}%"
                 else:
                     send "Unknown Player" to console
@@ -25,29 +27,47 @@ command /supercompass [<text>] [<text>]:
                 if arg-2 is not set:
                     send "Please specific Player Name"
                     stop
+                set {_player} to arg-2 parsed as player
+                if {_player} is set:
+                    reset {_player}'s compass target
+                    send "Successfully unset %{_player}%'s compass location to spawn point"
+                else:
+                    send "Unknown Player" to console
             else:
                 send "Please specific operation type. [Set|Unset]"
 
+function SC_getRawLocation(id: text) :: text:
+    {-SC::Compass::%{_id}%.Location} is set
+    return {-SC::Compass::%{_id}%.Location}
+
 function SC_getLocation(id: text) :: location:
-    {-SC::Compass::%{_id}%} is set
-    set {_values::*} to {-SC::Compass::%{_id}%} split at ";"
+    {-SC::Compass::%{_id}%.Location} is set
+    set {_values::*} to {-SC::Compass::%{_id}%.Location} split at ";"
     set {_output} to location({_values::1} parsed as number, {_values::2} parsed as number, {_values::3} parsed as number, {_values::4} parsed as world)
     {_output} is set
     return {_output}
 
-function SC_hasCompass() :: boolean:
-    yaml ""
+function SC_getComapssName(id: text) :: text:
+    return {-SC::Compass::%{_id}%.Name} ? ""
+
+function SC_hasCompass(id: text) :: boolean:
+    {-SC::Compass::%{_id}%} is set:
+        return true
+    return false
 
 
 on load:
-
-    set {_keys::*} to yaml node keys "" from "plugins/SUPERCOMPASS/config.yml"
-    loop {_keys::*}
-        set {-SC::Compass::%loop-value%} to yaml value "%loop-value%" from "plugins/SUPERCOMPASS/config.yml"
+    load yaml "plugins/SUPERCOMPASS/config.yml"
+    clear {-SC::Compass::*}
+    set {_compassids::*} to yaml node keys "compass" from "plugins/SUPERCOMPASS/config.yml"
+    loop {_compassids::*}:
+        set {_compassinfo::*} to yaml node keys "compass.%loop-value%" from "plugins/SUPERCOMPASS/config.yml"
+        loop {_compassinfo::*}:
+            set {-SC::Compass::%loop-value-1%.%loop-value-2 in proper case%} to yaml value "compass.%loop-value-1%.%loop-value-2%" from "plugins/SUPERCOMPASS/config.yml"
 
 on load:
 
-    add "Messages.\" to {_list::*}
+    add "Successfully_Set_Compass\&8[&6!&8]&f 已将指南针指向 {VALUE1}&f 坐标&e {VALUE2}." to {_list::*}
 
     #add "Compass.Test\0;0;0;SKYBLOCK" to {_list::*}
 
